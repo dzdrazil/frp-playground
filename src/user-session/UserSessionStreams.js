@@ -2,25 +2,29 @@
 
 import Kefir from 'kefir';
 
-export const UserLoginSignal = Kefir.emitter();
+export function UserSession() {
+  let mod = {
+    Login: null,
+    Logout: null,
+    Current: null
+  };
 
-export const UserLogoutSignal = Kefir.emitter();
+  let loginStream = Kefir
+    .stream(function(emitter) {
+      mod.Login = emitter;
+    })
+    .valuesToErrors(x =>
+      ({convert: x.username.length <= 3, error: 'Usernames must have 4 or more characters'}));
 
-let userSessionAuthenticationRequest = UserLoginSignal
-  .map((/* userInput */) => {
-    // ordinarily, this would be an ajax call
-    // for the sake of simplicity, pretend it succeeded
-    // and we would use `flatMapLatest` instead of `map`
-    return {
-      username: 'test@test.com',
-      id: 404
-    };
+  let logoutStream = Kefir.stream(function(emitter) {
+    mod.Logout = emitter;
   });
 
+  mod.Current = Kefir.merge([
+      loginStream.map(({username}) => ({username: username, id: 1})),
+      logoutStream.map(() => null)
+    ])
+    .toProperty(() => null);
 
-export const UserSession = Kefir
-  .merge([
-    userSessionAuthenticationRequest,
-    UserLogoutSignal.map(() => null)
-  ])
-  .toProperty(null);
+  return mod;
+}

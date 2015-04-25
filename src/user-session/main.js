@@ -1,6 +1,8 @@
 'use strict';
 
-import * as UserSessionStreams from './UserSessionStreams';
+import {UserSession} from './UserSessionStreams';
+
+let User = UserSession();
 
 let body = window.document.body;
 
@@ -11,7 +13,7 @@ function showLogin() {
   body.innerHTML = `
     <form id="loginForm">
       Login<br>
-      Username: <input name="username" /><br>
+      Username: <input id="username" name="username" /><br>
       <input type="submit" value="Submit" />
     </form>
   `;
@@ -20,8 +22,9 @@ function showLogin() {
     e.preventDefault();
 
     // ordinarily, gather up the form data and emit it into the login signal
-    UserSessionStreams
-      .UserLoginSignal.emit({});
+    User
+      .Login
+      .emit({username: this.username.value});
   }
 }
 
@@ -32,16 +35,19 @@ function showLogout(user) {
 
   document.querySelector('#logoutLink').onclick = function(e) {
     e.preventDefault();
-    UserSessionStreams
-      .UserLogoutSignal.emit();
+    User
+      .Logout
+      .emit();
   }
 }
 
 ///
 /// Init
 ///
-UserSessionStreams
-  .UserSession.onValue(userSession => {
+User
+  .Current
+  .onValue(userSession => {
     if (userSession) showLogout(userSession);
     else showLogin();
-  });
+  })
+  .onError(e => alert(e));
